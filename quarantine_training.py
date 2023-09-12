@@ -24,7 +24,7 @@ from models import PreActResNet18, PreActResNet18_ImageNet, MobileNet32, Shuffle
 
 def get_low_loss_idx(opt):
     criterion = torch.nn.CrossEntropyLoss().cuda()
-    split_model_path = f'checkpoints/filter/split/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
+    split_model_path = f'checkpoints/pre-qt/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
                        f'poison{opt.poisoned_rate}.path'
     model = {
         "PreActResNet18": PreActResNet18(num_classes=opt.num_classes),
