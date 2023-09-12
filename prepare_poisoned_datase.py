@@ -10,8 +10,6 @@ import torchvision
 import config
 import torch.nn.functional as F
 
-from utils.dataloader import TinyImagenet
-
 
 class BackdoorDatasets(Dataset):
 
@@ -26,10 +24,6 @@ class BackdoorDatasets(Dataset):
             self.opt.input_channel = 3
             self.opt.input_width = 32
             self.opt.input_height = 32
-        elif self.dataname == 'tiny-imagenet':
-            self.opt.input_channel = 3
-            self.opt.input_width = 64
-            self.opt.input_height = 64
         else:
             raise Exception("Invalid dataset!")
 
@@ -396,11 +390,7 @@ class BackdoorDatasets(Dataset):
 
 def trans(dataset):
     trans_list = [torchvision.transforms.ToTensor()]
-    if dataset == 'cifar10' or dataset == 'cifar100':
-        trans_list.append(torchvision.transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]))
-    elif dataset == 'imagenet-subset' or dataset == 'tiny-imagenet':
-        trans_list.append(torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
-
+    trans_list.append(torchvision.transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]))
     return torchvision.transforms.Compose(trans_list)
 
 
@@ -410,11 +400,7 @@ def main():
         "cifar10": torchvision.datasets.CIFAR10(root=opt.dataset_path,
                                                 train=True),
         "cifar100": torchvision.datasets.CIFAR100(root=opt.dataset_path,
-                                                  train=True),
-        "imagenet-subset": torchvision.datasets.ImageFolder(root=os.path.join(opt.imagenet_path, "train"),
-                                                            transform=torchvision.transforms.Resize((224, 224))),
-        "tiny-imagenet": TinyImagenet(root=opt.dataset_path,
-                                      train=True)
+                                                  train=True)
     }
     train_dataset = BackdoorDatasets(opt=opt,
                                      dataset=ori_datasets[opt.dataset],
