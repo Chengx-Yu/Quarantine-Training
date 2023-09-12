@@ -19,7 +19,7 @@ from torchvision import datasets
 from torchvision.transforms import transforms
 from torch.utils.data import Dataset, DataLoader
 
-from models import PreActResNet18, PreActResNet18_ImageNet, MobileNet32, ShuffleNetV2, dynamicnet, StegaStampEncoder
+from models import PreActResNet18
 
 
 def get_low_loss_idx(opt):
@@ -132,38 +132,16 @@ class BackdoorDatasets(Dataset):
             self.opt.input_channel = 3
             self.opt.input_width = 32
             self.opt.input_height = 32
-        elif self.dataname == 'tiny-imagenet':
-            self.opt.input_channel = 3
-            self.opt.input_width = 64
-            self.opt.input_height = 64
         else:
             raise Exception("Invalid dataset!")
         # self.classes = datasets.classes
         # self.class_to_idx = datasets.class_to_idx
-
-        if opt.trigger_type == 'dynamicTrigger':
-            if 'cifar' in self.dataname:
-                model_path = opt.dynamic_model_path
-            device = torch.device('cuda')
-
-            state_dict = torch.load(model_path, map_location=device)
-            self.netG = dynamicnet.Generator(self.opt).to(device)
-            self.netG.load_state_dict(state_dict['netG'])
-            self.netM = dynamicnet.Generator(self.opt, out_channels=1).to(device)
-            self.netM.load_state_dict(state_dict['netM'])
-            self.netG.eval()
-            self.netM.eval()
-        elif opt.trigger_type == 'blendHelloKitty':
+        if opt.trigger_type == 'blendHelloKitty':
             mask_path = os.path.join('trigger/hello_kitty_' + str(self.opt.input_height) + '.npy')
             self.mask = np.load(mask_path)
         elif opt.trigger_type == 'blendRandom':
             mask_path = os.path.join('trigger/blend_signal_' + str(self.opt.input_height) + '.npy')
             self.mask = np.load(mask_path)
-        elif opt.trigger_type == 'ISSBA':
-            state_dict = torch.load('trigger/ISSBA_cifar10.pth')
-            self.secret = torch.load('trigger/secret').cuda()
-            self.encoder = StegaStampEncoder(secret_size=len(self.secret), height=32, width=32, in_channel=3).cuda()
-            self.encoder.load_state_dict(state_dict['encoder_state_dict'])
         self.dataset = self.add_trigger(dataset, opt.target_label, opt.target_type, opt.trigger_type, portion, mode)
 
     def __getitem__(self, item):
@@ -461,38 +439,6 @@ class BackdoorDatasets(Dataset):
 
         return img_
 
-    def _dynamicTrigger(self, img, width, height):
-        def create_bd(net1, net2, inputs):
-            patterns = net1(inputs)
-            masks_output = net2.threshold(net2(inputs))
-            return patterns, masks_output
-        device = torch.device('cuda')
-
-        normalizer = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                                          std=[0.247, 0.243, 0.261]) if 'cifar' in self.dataname else \
-            transforms.Normalize(mean=[0.4802, 0.4481, 0.3975],
-                                 std=[0.2302, 0.2265, 0.2262])
-        # Add trigers
-        x = img.copy()
-        x = torch.tensor(x).permute(2, 0, 1) / 255.0
-        x_in = torch.stack([normalizer(x)]).to(device)
-        p, m = create_bd(self.netG, self.netM, x_in)
-        p = p[0, :, :, :].detach().cpu()
-        m = m[0, :, :, :].detach().cpu()
-        x_bd = x + (p - x) * m
-        x_bd = x_bd.permute(1, 2, 0).numpy() * 255
-        x_bd = x_bd.astype(np.uint8)
-
-        return x_bd
-
-    def _ISSBA(self, img, width, height):
-        img_ = torch.FloatTensor(img).div(255)
-        img_ = img_.permute(2, 0, 1).unsqueeze(0)
-        residual = self.encoder([self.secret, img_.cuda()]).detach().cpu()
-        encoded_img = (img_ + residual).clamp(0, 1)
-        img_ = (np.array(encoded_img[0].mul(255).byte(), dtype=np.uint8)).transpose(1, 2, 0)
-        return img_
-
 
 class ReloadDataset(Dataset):
     def __init__(self, dataset, transform=None):
@@ -558,10 +504,7 @@ def load_dataloader(opt):
 
 def net_prepare(opt):
     model = {
-        "PreActResNet18": PreActResNet18(num_classes=opt.num_classes),
-        "ResNet18": torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1),
-        "MobileNet": MobileNet32(num_classes=opt.num_classes),
-        "ShuffleNetV2": ShuffleNetV2(net_size=0.5)
+        "PreActResNet18": PreActResNet18(num_classes=opt.num_classes)
     }
     net = model[opt.use_model]
     split_model_path = f'checkpoints/filter/split/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
