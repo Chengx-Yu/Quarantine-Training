@@ -369,8 +369,13 @@ def main():
                                      dataset=ori_datasets[opt.dataset],
                                      mode='train',
                                      rate=opt.poisoned_rate)
+    
     data_path = "./poisoned_datasets/{}/{}-{}-{}.npy".format(opt.trigger_type, opt.dataset, opt.target_type,
                                                              opt.poisoned_rate)
+    data_file = "./poisoned_datasets/{}".format(opt.trigger_type)
+    if not os.path.exists(data_file):
+        os.makedirs(data_file)
+    
     print('Dataset : {}'.format(len(train_dataset)))
     print('Start saving.')
     start = time.time()
