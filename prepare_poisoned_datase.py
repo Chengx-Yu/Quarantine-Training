@@ -1,7 +1,6 @@
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from PIL import Image
-from models import dynamicnet, StegaStampEncoder
 import numpy as np
 import os
 import time
@@ -27,35 +26,12 @@ class BackdoorDatasets(Dataset):
         else:
             raise Exception("Invalid dataset!")
 
-        if opt.trigger_type == 'dynamicTrigger':
-            if self.dataname == 'cifar10' or self.dataname == 'cifar100':
-                model_path = opt.dynamic_model_path
-            device = torch.device('cuda')
-            state_dict = torch.load(model_path, map_location=device)
-            self.netG = dynamicnet.Generator(self.opt).to(device)
-            self.netG.load_state_dict(state_dict['netG'])
-            self.netM = dynamicnet.Generator(self.opt, out_channels=1).to(device)
-            self.netM.load_state_dict(state_dict['netM'])
-            self.netG.eval()
-            self.netM.eval()
-        elif opt.trigger_type == 'blendHelloKitty':
+        if opt.trigger_type == 'blendHelloKitty':
             mask_path = os.path.join('trigger/hello_kitty_' + str(self.opt.input_height) + '.npy')
             self.mask = np.load(mask_path)
         elif opt.trigger_type == 'blendRandom':
             mask_path = os.path.join('trigger/blend_signal_'+str(self.opt.input_height)+'.npy')
             self.mask = np.load(mask_path)
-        elif opt.trigger_type == 'ISSBA':
-            state_dict = torch.load('trigger/ISSBA_cifar10.pth')
-            self.secret = torch.load('trigger/secret').cuda()
-            self.encoder = StegaStampEncoder(secret_size=len(self.secret),
-                                             height=self.opt.input_height, width=self.opt.input_width, in_channel=3).cuda()
-            self.encoder.load_state_dict(state_dict['encoder_state_dict'])
-        elif opt.trigger_type == 'signalTrigger' and dataset == 'tiny-imagenet':
-            self.mask = np.zeros([64, 64], dtype=float)
-            for ix in range(64):
-                for jx in range(64):
-                    self.mask[ix, jx] = 30 / 255 * np.sin(2 * np.pi * jx * 6 / 64)
-
         self.dataset = self.add_trigger(dataset,
                                         opt.target_label,
                                         opt.target_type,
@@ -255,12 +231,6 @@ class BackdoorDatasets(Dataset):
         elif triggerType == 'trojanTrigger':
             img = self._trojanTrigger(img, width, height)
 
-        elif triggerType == 'dynamicTrigger':
-            img = self._dynamicTrigger(img, width, height)
-
-        elif triggerType == 'ISSBA':
-            img = self._ISSBA(img, width, height)
-
         else:
             raise NotImplementedError
 
@@ -379,13 +349,6 @@ class BackdoorDatasets(Dataset):
 
         return img_
 
-    def _ISSBA(self, img, width, height):
-        img_ = torch.FloatTensor(img).div(255)
-        img_ = img_.permute(2, 0, 1).unsqueeze(0)
-        residual = self.encoder([self.secret, img_.cuda()]).detach().cpu()
-        encoded_img = (img_ + residual).clamp(0, 1)
-        img_ = (np.array(encoded_img[0].mul(255).byte(), dtype=np.uint8)).transpose(1, 2, 0)
-        return img_
 
 
 def trans(dataset):
