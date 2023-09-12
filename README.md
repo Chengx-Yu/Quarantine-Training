@@ -12,5 +12,5 @@ python train_pre-quarantine_model.py
 ```
 ## Start quarantine training:
 ```
-python quarantine.py
+python quarantine_training.py
 ```
