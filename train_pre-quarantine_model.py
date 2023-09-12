@@ -8,8 +8,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import TransformedDataset
-from models import PreActResNet18, ResNet50, PreActResNet101
-from utils import create_bd, PostTensorTransform
+from models import PreActResNet18
 
 def trans(dataset):
     trans_list = [torchvision.transforms.ToTensor()]
@@ -35,13 +34,6 @@ def load_dataloader(opt):
 def net_prepare(opt):
     if opt.use_model == 'PreActResNet18':
         net = PreActResNet18(num_classes=opt.num_classes).to(opt.device)
-    elif opt.use_model == 'ResNet18':
-        net = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-        fc_features = net.fc.in_features
-        net.fc = torch.nn.Linear(fc_features, opt.num_classes)
-        net = net.to(opt.device)
-    elif opt.use_model == 'PreActResNet101':
-        net = PreActResNet101()
     else:
         raise Exception('Error model!')
 
