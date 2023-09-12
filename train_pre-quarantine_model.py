@@ -86,7 +86,7 @@ def easy_train(net, optimizer, scheduler, train_data_loader, opt):
 def main():
     opt = config.get_arguments().parse_args()
     opt.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    opt.model_path = f'./checkpoints/filter/split/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
+    opt.model_path = f'./checkpoints/pre-qt/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
                      f'poison{opt.poisoned_rate}.path'
     opt.poisoned_dataset = "./poisoned_datasets/{}/{}-{}-{}.npy".format(opt.trigger_type, opt.dataset, opt.target_type,
                                                          opt.poisoned_rate)
