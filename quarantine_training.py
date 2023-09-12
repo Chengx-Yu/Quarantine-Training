@@ -618,6 +618,9 @@ def eval_process(dataloader, net):
 def main():
     opt = config.get_arguments().parse_args()
     opt.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    model_file = f'./checkpoints/quarantine'
+    if not os.path.exists(model_file):
+        os.makedirs(model_file)
     opt.model_path = f'./checkpoints/quarantine/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
                      f'poison{opt.poisoned_rate}.path'
     opt.poisoned_dataset = "./poisoned_datasets/{}/{}-{}-{}.npy".format(opt.trigger_type, opt.dataset, opt.target_type,
