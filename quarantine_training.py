@@ -701,10 +701,7 @@ def main():
             doc.append(
                 (epo + 1, acc_train_ori, acc_test, asr_test, best_acc, best_asr, acc_clean_qt, acc_trojan_qt))
             df = pd.DataFrame(doc, columns=('epoch', 'train_acc', 'test_acc', 'test_asr', 'best_acc', 'best_asr', 'clean_qt', 'trojan_qt'))
-            # df.to_csv(f"./log/quarantine/{opt.use_model}-{opt.dataset}-{opt.target_type}-{opt.trigger_type}"
-            #           f"-poison{opt.poisoned_rate}.csv",
-            #           index=False, encoding='utf-8')
-            df.to_csv(f"./log/{opt.use_model}-{opt.dataset}-{opt.target_type}-{opt.trigger_type}"
+            df.to_csv(f"./log/quarantine/{opt.use_model}-{opt.dataset}-{opt.target_type}-{opt.trigger_type}"
                       f"-poison{opt.poisoned_rate}.csv",
                       index=False, encoding='utf-8')
 
