@@ -99,7 +99,7 @@ def main():
     net, optimizer, scheduler = net_prepare(opt=opt)
 
     train_data_loader, train_data_loader_order, train_data = load_dataloader(opt=opt)
-    for epo in range(5):
+    for epo in range(4):
         easy_train(net, optimizer, scheduler, train_data_loader, opt)
         torch.save(net.state_dict(), opt.model_path)
 if __name__ == "__main__":
