@@ -23,7 +23,6 @@ from models import PreActResNet18
 
 
 def get_low_loss_idx(opt):
-    criterion = torch.nn.CrossEntropyLoss().cuda()
     split_model_path = f'checkpoints/pre-qt/{opt.target_type}-{opt.trigger_type}-{opt.use_model}-{opt.dataset}-' \
                        f'poison{opt.poisoned_rate}.path'
     model = {
@@ -43,10 +42,10 @@ def get_low_loss_idx(opt):
 
     train_data = np.load(opt.poisoned_dataset, allow_pickle=True)
     train_data = ReloadDataset(train_data, transform=get_trans(opt.dataset, False))
-    each_dataloader = DataLoader(dataset=train_data, batch_size=1, shuffle=False)
+    each_dataloader = DataLoader(dataset=train_data, batch_size=opt.bs, shuffle=False)
 
     losses_record = []
-
+    criterion = torch.nn.CrossEntropyLoss(reduction='none').cuda()
     with torch.no_grad():
         for step, (img, target, _, is_bad, img_idx) in enumerate(tqdm(each_dataloader)):
             img, target = img.cuda(), target.cuda()
@@ -54,7 +53,8 @@ def get_low_loss_idx(opt):
             output = net(img)
             loss = criterion(output, target)
 
-            losses_record.append(loss.item())
+            losses_record += loss.tolist()
+            # losses_record.append(loss.item())
     losses_idx = np.argsort(np.array(losses_record))
 
     neg_idx = torch.tensor(losses_idx[:500]).cuda()
